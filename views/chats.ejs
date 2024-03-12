@@ -1,0 +1,14 @@
+<%- include("templates/header") %>
+
+<h1>Your Chats</h1>
+
+<p>Name | Last Read | Unread Messages</p>
+<% for (var i = 0; i < chats.length; i++) { %>
+    <p><%= chats[i].name %> | <%= chats[i].lastRead %> | <%= chats[i].unread%></p>
+<% } %>
+
+<form action="" method="post">
+    <button type="submit">New Group</button>
+</form>
+
+<%- include("templates/footer") %>

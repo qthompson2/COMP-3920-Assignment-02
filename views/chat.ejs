@@ -1,0 +1,14 @@
+<%- include("templates/header") %>
+
+<% for (var i = 0; i < messages.length; i++) { %>
+    <form action="/addEmojisExample" method="get">
+        <p>[<%= messages[i].time%>] <%= messages[i].username %>: <%= messages[i].content %></p>
+        <% for (var j = 0; j < messages[i].emojis.length; j++) { %>
+            <%= messages[i].emojis[j].icon%> <%= messages[i].emojis[j].count%>
+        <% } %>
+        <button type="submit">+</button>
+    </form>
+    <br><br>
+<% } %>
+
+<%- include("templates/footer") %>

@@ -1,0 +1,17 @@
+<%- include("templates/header") %>
+
+<form action="/newGroup" method="post">
+    <p>Group Name <input type="text" name="groupName"></p>
+
+    <ul id="optionsCheckboxes">
+        <%for (var i = 0; i < people.length; i++) {%>
+            <li><input type="checkbox"><%= people[i].username %></li>
+        <%}%>
+    </ul>
+
+    <button type="submit">Create Group</button>
+</form>
+
+<a href="/chats">Back</a>
+
+<%- include("templates/footer") %>

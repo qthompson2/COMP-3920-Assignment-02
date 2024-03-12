@@ -1,0 +1,15 @@
+<%- include("templates/header") %>
+
+<form action="/emoji" method="post">
+    <p><% message.content %></p>
+
+    <ul id="optionsCheckboxes">
+        <%for (var i = 0; i < emojis.length; i++) {%>
+            <li><input type="checkbox"><%= emojis[i].icon %></li>
+        <%}%>
+    </ul>
+
+    <button type="submit">Done</button>
+</form>
+
+<%- include("templates/footer") %>
