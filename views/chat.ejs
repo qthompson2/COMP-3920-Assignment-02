@@ -1,8 +1,20 @@
 <%- include("templates/header") %>
 
 <% for (var i = 0; i < messages.length; i++) { %>
-    <form action="/addEmojisExample" method="get">
-        <p>[<%= messages[i].time%>] <%= messages[i].username %>: <%= messages[i].content %></p>
+    <form action="/emoji/<%= messages[i].m_id%>" method="get">
+        <% if (messages[i].num_days_from_now == 0) { %>
+            <% if (messages[i].u_id == user_id) { %>
+                <p style="color: blue;">(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
+            <% } else { %>
+                <p>(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
+            <% } %>
+        <% } else {%>
+            <% if (messages[i].u_id == user_id) { %>
+                <p style="color: blue;">(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
+            <% } else { %>
+                <p>(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
+            <% } %>
+        <% } %>
         <% for (var j = 0; j < messages[i].emojis.length; j++) { %>
             <%= messages[i].emojis[j].icon%> <%= messages[i].emojis[j].count%>
         <% } %>
@@ -10,5 +22,10 @@
     </form>
     <br><br>
 <% } %>
+
+<form action="/chat/<%= room_id%>" method="post">
+    <input type="text" name="message">
+    <button type="submit">Send</button>
+</form>
 
 <%- include("templates/footer") %>

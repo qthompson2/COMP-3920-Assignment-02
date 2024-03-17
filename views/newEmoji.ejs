@@ -1,11 +1,11 @@
 <%- include("templates/header") %>
 
-<form action="/emoji" method="post">
+<form action="/emoji/<%= message.m_id%>" method="post">
     <p><% message.content %></p>
 
     <ul id="optionsCheckboxes">
-        <%for (var i = 0; i < emojis.length; i++) {%>
-            <li><input type="checkbox"><%= emojis[i].icon %></li>
+        <%for (var i = 0; i < message.emojis.length; i++) {%>
+            <li><input type="checkbox" name="<%=message.emojis[i].id%>" <%= message.emojis[i].checked ? "checked" : "" %>><%= message.emojis[i].icon %> <%= message.emojis[i].count%></li>
         <%}%>
     </ul>
 

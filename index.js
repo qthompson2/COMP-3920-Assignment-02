@@ -7,6 +7,7 @@ const bcrypt = require('bcrypt');
 
 const db_users = require('./database/users.js')
 const db_utils = require('./database/db_utils.js') 
+const db_chats = require('./database/chats.js')
 
 const saltRounds = 12;
 
@@ -34,6 +35,8 @@ var mongoStore = MongoStore.create({
 	}
 });
 
+
+
 app.use(session({ 
         secret: node_session_secret,
         store: mongoStore, //default is memory store 
@@ -49,136 +52,128 @@ function isValidSession(req) {
 	return false;
 }
 
-function sessionValidation(req, res, next) {
-	if (!isValidSession(req)) {
-		req.session.destroy();
-		res.redirect('/login');
-        app.locals.username = ""
-		return;
-	}
-	else {
-		next();
-	}
-}
-
-function sessionLoggedIn(req, res, next) {
-    if (isValidSession(req)) {
-        res.redirect("/members")
+function checkUserExists(req, res, next) {
+    if (app.locals.user === undefined) {
+        req.session.destroy();
+        res.redirect('/login');
         return;
     } else {
         next();
     }
 }
 
+function sessionValidation(req, res, next) {
+	if (!isValidSession(req)) {
+		req.session.destroy();
+		res.redirect('/login');
+		return;
+	}
+	else {
+        checkUserExists(req, res, next);
+	}
+}
+
+function sessionLoggedIn(req, res, next) {
+    console.log("Validating session...");
+    if (isValidSession(req)) {
+        checkUserExists(req, res, next);
+        res.redirect("/chats")
+        return;
+    } else {
+        next();
+    }
+}
+
+app.use('/login', sessionLoggedIn);
+app.use('/registration', sessionLoggedIn);
+
+app.use('/chats', sessionValidation);
+app.use('/chat', sessionValidation);
+
 app.use(express.static('public'));
+app.use(express.urlencoded({extended: false}));
 app.set('view engine', 'ejs');
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
-let exampleChat = [
-    {
-        time: '2021-02-01T12:00:00',
-        username: 'user1',
-        content: 'Hello',
-        emojis: [
-            {
-                icon: '😁',
-                count: 1
-            },
-            {
-                icon: '🥰',
-                count: 2
-            }
-        ]
-    },
-    {
-        time: '2021-02-01T12:01:00',
-        username: 'user2',
-        content: 'That\'s nice.',
-        emojis: []
-    },
-    {
-        time: '2021-02-01T12:02:00',
-        username: 'user1',
-        content: 'I know, right?',
-        emojis: [
-            {
-                icon: '😁',
-                count: 1
-            }
-        ]
-    },
-    {
-        time: '2021-02-01T12:03:00',
-        username: 'user2',
-        content: 'I\'m glad you\'re happy.',
-        emojis: [
-            {
-                icon: '😁',
-                count: 1
-            }
-        ]
-    }
-]
+app.get('/chat', async (req, res) => { 
+    let data = await db_chats.getChat({room_id: req.query.id});
 
-let exampleUsers = [
-    {
-        username: 'user1',
-        status: 'online'
-    },
-    {
-        username: 'user2',
-        status: 'offline'
-    },
-    {
-        username: 'user3',
-        status: 'online'
-    },
-    {
-        username: 'user4',
-        status: 'offline'
-    }
-]
-
-let exampleEmojis = [
-    {
-        name: 'smiling face',
-        icon: '😁',
-    },
-    {
-        name: 'hearts',
-        icon: '🥰',
-    },
-    {
-        name: 'thumbs up',
-        icon: '👍',
-    },
-    {
-        name: 'thumbs down',
-        icon: '👎',
-    },
-    {
-        name: 'laughing',
-        icon: '😂',
-    }
-]
-
-app.get('/chatExample', (req, res) => {
-  res.render('chat', {messages: exampleChat});
+    res.render('chat', {messages: data, user_id: app.locals.user.user_id, room_id: req.query.id});
 });
 
-app.get('/chatsExample', (req, res) => {
-    res.render('chats', {messages: exampleChat});
+app.post('/chat/:id', async (req, res) => {
+    let postData = {message: req.body.message, user_id: app.locals.user.user_id, room_id: req.params.id}
+
+    await db_chats.sendMessage(postData);
+
+    res.redirect(`/chat?id=${postData.room_id}`);
 });
 
-// This could be combined with the chats page
-app.get('/newGroupExample', (req, res) => {
-    res.render('newGroup', {people: exampleUsers});
+app.get('/emoji/:id', async (req, res) => {
+    let postData = {user_id: app.locals.user.user_id, message_id: req.params.id};
+
+    let message = await db_chats.getMessage(postData);
+
+    res.render('newEmoji', {message: message});
 });
 
-// This could be done with a dropdown menu instead of it's own page
-app.get('/addEmojisExample', (req, res) => {
-    res.render('newEmoji', {emojis: exampleEmojis, message: exampleChat[0]});
+app.post('/emoji/:id', async (req, res) => {
+    let postData = {user_id: app.locals.user.user_id, message_id: req.params.id};
+
+    let original = await db_chats.getMessage(postData);
+
+    let checked = req.body;
+
+    let new_checked = {};
+
+    for (let i = 0; i < original.emojis.length; i++) {
+        let emoji = original.emojis[i];
+        if (checked[emoji.id] === undefined) {
+            new_checked[emoji.id] = "off";
+        } else {
+            new_checked[emoji.id] = "on";
+        }
+    }
+
+    for (let i = 0; i < original.emojis.length; i++) {
+        let emoji = original.emojis[i];
+        console.log(new_checked[emoji.id] + " " + emoji.checked);
+        if ((new_checked[emoji.id] === "on") ^ emoji.checked) {
+            await db_chats.toggleReaction(app.locals.user.user_id, postData.message_id, emoji.id);
+        }
+    }
+
+    res.redirect(`/chat?id=${original.r_id}`);
+});
+
+app.get('/chats', async (req, res) => {
+    let data = await db_chats.getAllChats({user_id: app.locals.user.user_id});
+
+    res.render('chats', {chats: data});
+});
+
+app.get('/login', (req, res) => {
+    res.render('login', {error: false});
+});
+
+app.post('/login', async (req, res) => {
+    let postData = req.body;
+    let user = await db_users.getUser(postData);
+    if (user) {
+        if (postData.password === user.password_hash) {//bcrypt.compare(postData.password, user.password_hash)) {
+            console.log("User authenticated");
+            app.locals.user = user;
+
+            req.session.authenticated = true;
+            req.session.username = user.username;
+            req.session.cookie.maxAge = expireTime;
+
+            res.redirect('/chats');
+            return;
+        }
+    }
+    res.redirect('/login');
 });
