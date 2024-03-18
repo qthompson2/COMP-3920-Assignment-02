@@ -6,15 +6,15 @@
     <form action="/emoji/<%= messages[i].m_id%>" method="get">
         <% if (messages[i].num_days_from_now == 0) { %>
             <% if (messages[i].u_id == user_id) { %>
-                <p style="color: blue;">(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
+                <p style="color: blue;" title="<%= messages[i].date%>">(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
             <% } else { %>
-                <p>(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
+                <p title="<%= messages[i].date%>">(Today) <%= messages[i].username %>: <%= messages[i].message %></p>
             <% } %>
         <% } else {%>
             <% if (messages[i].u_id == user_id) { %>
-                <p style="color: blue;">(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
+                <p style="color: blue;" title="<%= messages[i].date%>">(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
             <% } else { %>
-                <p>(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
+                <p title="<%= messages[i].date%>">(<%= messages[i].num_days_from_now%> Days Ago) <%= messages[i].username %>: <%= messages[i].message %></p>
             <% } %>
         <% } %>
         <% for (var j = 0; j < messages[i].emojis.length; j++) { %>

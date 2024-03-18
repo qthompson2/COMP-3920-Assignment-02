@@ -34,6 +34,12 @@ async function getAllChats(postData) {
             ru.room_id = :room_id;
     `;
 
+    let getLastMessageDateSQL = `
+        select date_format(m.sent_datetime, "%W, %b. %d") "date"
+        from message m
+        where m.message_id = :max_msg;
+    `;
+
     let user_id_params = {
         user_id: postData.user_id
     }
@@ -54,8 +60,11 @@ async function getAllChats(postData) {
 
             let unreadMessages = await database.query(getUnreadMessagesSQL, room_id_params);
 
+            let lastMessageDate = await database.query(getLastMessageDateSQL, room_id_params);
+
             room.max_msg = latestMessage[0][0].max_msg;
             room.unread = unreadMessages[0][0].unread;
+            room.date = lastMessageDate[0][0].date;
         }
 
         console.log("Successfully retrieved chats");
@@ -71,7 +80,7 @@ async function getAllChats(postData) {
 
 async function getChat(postData) {
     let getChatSQL = `
-        select m.message_id "m_id", m.text "message", m.sent_datetime "date", datediff(now(), m.sent_datetime) "num_days_from_now", u.user_id "u_id", u.username "username"
+        select m.message_id "m_id", m.text "message", date_format(m.sent_datetime, "%W, %b. %d") "date", datediff(now(), m.sent_datetime) "num_days_from_now", u.user_id "u_id", u.username "username"
         from message m
         left join room_user ru
         on m.room_user_id = ru.room_user_id

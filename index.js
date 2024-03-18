@@ -8,6 +8,8 @@ const bcrypt = require('bcrypt');
 const db_users = require('./database/users.js')
 const db_utils = require('./database/db_utils.js') 
 const db_chats = require('./database/chats.js');
+const e = require("express");
+const { error } = require("dialog-node");
 
 const saltRounds = 12;
 
@@ -251,6 +253,7 @@ app.get('/logout', (req, res) => {
 
 app.get('/register', (req, res) => {
     let error;
+    let passwordError;
     
     if (req.query.error === undefined) {
         error = false;
@@ -258,11 +261,43 @@ app.get('/register', (req, res) => {
         error = true;
     }
 
-    res.render('register', {error: error});
+    if (req.query['password-error'] === undefined) {
+        passwordError = false;
+    } else {
+        passwordError = true;
+    }
+
+    res.render('register', {error: error, passwordError: passwordError, passwordErrors: [req.query['too-short'], req.query['wrong-case'], req.query['no-number'], req.query['no-special']]});
 });
 
 app.post('/register', async (req, res) => {
     let postData = req.body;
+    let errors = {
+        tooShort: false,
+        wrongCase: false,
+        noNumber: false,
+        noSpecial: false
+    }
+
+    //Check Password Requirements
+    let password = postData.password;
+    if (password.length < 9) {
+        errors.tooShort = true;
+    }
+    if (!/^(?=.*[a-z])(?=.*[A-Z]).+$/.test(password)) {
+        errors.wrongCase = true;
+    }
+    if (!/\d/.test(password)) {
+        errors.noNumber = true;
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) { 
+        errors.noSpecial = true;
+    }
+
+    if (errors.tooShort || errors.wrongCase || errors.noNumber || errors.noSpecial) {
+        res.redirect(`/register?password-error=true&too-short=${errors.tooShort}&wrong-case=${errors.wrongCase}&no-number=${errors.noNumber}&no-special=${errors.noSpecial}`);
+        return;
+    }
 
     let hashedPassword = await bcrypt.hash(postData.password, saltRounds);
 

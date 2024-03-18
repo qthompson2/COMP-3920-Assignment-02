@@ -13,4 +13,15 @@
     <br><br><p style="color: red;">Invalid login!</p>
 <% } %>
 
+<% if (passwordError) { %>
+    <br><br>
+    <p style="color: red;">Invalid password!</p>
+    <ul>
+        <li style=<%= passwordErrors[0] == 'true' ? "color:red;" : "color:lime;"%>>Password must be at least 10 characters long</li>
+        <li style=<%= passwordErrors[1] == 'true' ? "color:red;" : "color:lime;"%>>Password must contain at least 1 uppercase letter and 1 lowercase letter</li>
+        <li style=<%= passwordErrors[2] == 'true' ? "color:red;" : "color:lime;"%>>Password must contain at least 1 number</li>
+        <li style=<%= passwordErrors[3] == 'true' ? "color:red;" : "color:lime;"%>>Password must contain at least 1 special character</li>
+    </ul>
+<% } %>
+
 <%- include("templates/footer") %>
