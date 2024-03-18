@@ -77,8 +77,7 @@ function sessionValidation(req, res, next) {
 
 function sessionLoggedIn(req, res, next) {
     console.log("Validating session...");
-    if (isValidSession(req)) {
-        checkUserExists(req, res, next);
+    if (isValidSession(req) && app.locals.user !== undefined) {
         res.redirect("/chats")
         return;
     } else {
@@ -87,7 +86,7 @@ function sessionLoggedIn(req, res, next) {
 }
 
 app.use('/login', sessionLoggedIn);
-app.use('/registration', sessionLoggedIn);
+app.use('/register', sessionLoggedIn);
 
 app.use('/chats', sessionValidation);
 app.use('/chat', sessionValidation);
