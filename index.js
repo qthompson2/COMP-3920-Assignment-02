@@ -230,7 +230,7 @@ app.post('/login', async (req, res) => {
     let user = await db_users.getUser(postData);
 
     if (user) {
-        if (bcrypt.compare(postData.password, user.password_hash)) { //postData.password === user.password_hash) {
+        if (bcrypt.compareSync(postData.password, user.password_hash)) { //postData.password === user.password_hash) {
             console.log("User authenticated");
             app.locals.user = user;
 
@@ -241,9 +241,9 @@ app.post('/login', async (req, res) => {
             res.redirect('/chats');
             return;
         }
-    } else {
-        res.redirect('/login?error=true');
     }
+    res.redirect('/login?error=true');
+    return;
 });
 
 app.get('/logout', (req, res) => {
