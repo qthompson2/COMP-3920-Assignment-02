@@ -1,11 +1,14 @@
 <%- include("templates/header") %>
 
-<form action="/newGroup" method="post">
+<%- include("templates/navbar") %>
+
+<form action="/new-chat" method="post">
     <p>Group Name <input type="text" name="groupName"></p>
 
     <ul id="optionsCheckboxes">
-        <%for (var i = 0; i < people.length; i++) {%>
-            <li><input type="checkbox"><%= people[i].username %></li>
+        <%for (var i = 0; i < users.length; i++) {%>
+            <% if (users[i].id == user_id) {continue} %>
+            <li><input type="checkbox" name="<%= users[i].id%>"><%= users[i].username %></li>
         <%}%>
     </ul>
 

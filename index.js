@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 
 const db_users = require('./database/users.js')
 const db_utils = require('./database/db_utils.js') 
-const db_chats = require('./database/chats.js')
+const db_chats = require('./database/chats.js');
 
 const saltRounds = 12;
 
@@ -89,6 +89,9 @@ app.use('/registration', sessionLoggedIn);
 
 app.use('/chats', sessionValidation);
 app.use('/chat', sessionValidation);
+app.use('/add-user', sessionValidation);
+app.use('/new-chat', sessionValidation);
+app.use('/emoji', sessionValidation);
 
 app.use(express.static('public'));
 app.use(express.urlencoded({extended: false}));
@@ -98,8 +101,14 @@ app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
 
+app.get('/', (req, res) => {
+    res.redirect('/login');
+});
+
 app.get('/chat', async (req, res) => { 
     let data = await db_chats.getChat({room_id: req.query.id});
+
+    await db_chats.updateLastRead({user_id: app.locals.user.user_id, room_id: req.query.id});
 
     res.render('chat', {messages: data, user_id: app.locals.user.user_id, room_id: req.query.id});
 });
@@ -108,6 +117,8 @@ app.post('/chat/:id', async (req, res) => {
     let postData = {message: req.body.message, user_id: app.locals.user.user_id, room_id: req.params.id}
 
     await db_chats.sendMessage(postData);
+
+    await db_chats.updateLastRead({user_id: app.locals.user.user_id, room_id: req.params.id});
 
     res.redirect(`/chat?id=${postData.room_id}`);
 });
@@ -155,15 +166,69 @@ app.get('/chats', async (req, res) => {
     res.render('chats', {chats: data});
 });
 
+app.get('/add-user', async (req, res) => {
+    res.render('addUser', {room_id: req.query.id, user_not_found: req.query.user_not_found});
+});
+
+app.post('/add-user/:id', async (req, res) => {
+    let room_id = req.params.id;
+
+    let user = await db_users.getUserByName({username: req.body.username});
+
+    if (user) {
+        await db_chats.addUserToChat({user_id: user.id, room_id: room_id});
+        res.redirect('/chats');
+        return;
+    } else {
+        console.log("User not found");
+        res.redirect(`/add-user?room_id=${room_id}&user_not_found=true`);
+        return;
+    }
+});
+
+app.get('/new-chat', async (req, res) => {
+    let data = await db_users.getUsers();
+
+    res.render('newGroup', {users: data, user_id: app.locals.user.user_id});
+});
+
+app.post('/new-chat', async (req, res) => {
+    let postData = req.body;
+
+    let keys = Object.keys(postData);
+    let user_ids = [];
+    
+    for (let i = 0; i < keys.length; i++) { 
+        if (keys[i] !== "groupName") {
+            user_ids.push(parseInt(keys[i]));
+        }
+    }
+
+    user_ids.push(app.locals.user.user_id);
+
+    await db_chats.createRoom(postData.groupName, user_ids);
+
+    res.redirect('/chats');
+});
+
 app.get('/login', (req, res) => {
-    res.render('login', {error: false});
+    let error;
+    
+    if (req.query.error === undefined) {
+        error = false;
+    } else {
+        error = true;
+    }
+
+    res.render('login', {error: error});
 });
 
 app.post('/login', async (req, res) => {
     let postData = req.body;
     let user = await db_users.getUser(postData);
+
     if (user) {
-        if (postData.password === user.password_hash) {//bcrypt.compare(postData.password, user.password_hash)) {
+        if (bcrypt.compare(postData.password, user.password_hash)) { //postData.password === user.password_hash) {
             console.log("User authenticated");
             app.locals.user = user;
 
@@ -174,6 +239,44 @@ app.post('/login', async (req, res) => {
             res.redirect('/chats');
             return;
         }
+    } else {
+        res.redirect('/login?error=true');
     }
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
     res.redirect('/login');
+});
+
+app.get('/register', (req, res) => {
+    let error;
+    
+    if (req.query.error === undefined) {
+        error = false;
+    } else {
+        error = true;
+    }
+
+    res.render('register', {error: error});
+});
+
+app.post('/register', async (req, res) => {
+    let postData = req.body;
+
+    let hashedPassword = await bcrypt.hash(postData.password, saltRounds);
+
+    let user = await db_users.createUser({email: postData.email, username: postData.username, hashedPassword: hashedPassword});
+
+    if (!user) {
+        res.redirect('/register?error=true');
+        return;
+    }
+
+    res.redirect('/login');
+});
+
+app.get('/hash-password/:password', async (req, res) => {
+    let hash = await bcrypt.hash(req.params.password, saltRounds);
+    res.send(hash);
 });

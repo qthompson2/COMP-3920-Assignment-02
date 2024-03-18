@@ -7,4 +7,10 @@
     <br><br><button type="submit">Register</button>
 </form>
 
+<br><br><p><a href="/login">Already have an Account?</a></p>
+
+<% if (error) { %>
+    <br><br><p style="color: red;">Invalid login!</p>
+<% } %>
+
 <%- include("templates/footer") %>

@@ -8,4 +8,8 @@
 
 <p><a href="/register">Don't have an Account?</a></p>
 
+<% if (error) { %>
+    <br><br><p style="color: red;">Invalid login!</p>
+<% } %>
+
 <%- include("templates/footer") %>

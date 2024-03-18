@@ -3,13 +3,14 @@ const database = require('../databaseConnection');
 async function createUser(postData) {
 	let createUserSQL = `
 		INSERT INTO user
-		(username, password)
+		(email, username, password_hash)
 		VALUES
-		(:user, :passwordHash);
+		(:email, :username, :passwordHash);
 	`;
 
 	let params = {
-		user: postData.user,
+		email: postData.email,
+		username: postData.username,
 		passwordHash: postData.hashedPassword
 	}
 
@@ -29,7 +30,7 @@ async function createUser(postData) {
 
 async function getUsers(postData) {
 	let getUsersSQL = `
-		SELECT username, password
+		SELECT user_id "id", username
 		FROM user;
 	`;
 
@@ -72,4 +73,29 @@ async function getUser(postData) {
 	}
 }
 
-module.exports = {createUser, getUsers, getUser};
+async function getUserByName(postData) {
+	let getUserSQL = `
+		SELECT user_id "id"
+		FROM user
+		WHERE username = :username;
+	`;
+
+	let params = {
+		username: postData.username
+	}
+
+	try {
+		const results = await database.query(getUserSQL, params);
+
+		console.log("Successfully found user");
+		console.log(results[0]);
+		return results[0][0];
+	}
+	catch(err) {
+		console.log("Error trying to find user");
+		console.log(err);
+		return false;
+	}
+}
+
+module.exports = {createUser, getUsers, getUser, getUserByName};

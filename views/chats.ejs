@@ -1,13 +1,15 @@
 <%- include("templates/header") %>
 
+<%- include("templates/navbar") %>
+
 <h1>Your Chats</h1>
 
 <p>Name | Unread Messages</p>
 <% for (var i = 0; i < chats.length; i++) { %>
-    <p><a href="/chat?id=<%= chats[i].id%>"><%= chats[i].name %></a> |  <%= chats[i].unread%></p>
+    <p><a href="/add-user?id=<%= chats[i].id%>">+</a> | <a href="/chat?id=<%= chats[i].id%>"><%= chats[i].name %></a> |  <%= chats[i].unread%></p>
 <% } %>
 
-<form action="" method="post">
+<form action="/new-chat" method="get">
     <button type="submit">New Group</button>
 </form>
 

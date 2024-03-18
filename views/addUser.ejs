@@ -1,0 +1,13 @@
+<%- include("templates/header") %>
+
+<%- include("templates/navbar") %>
+<br>
+<form action="/add-user/<%= room_id%>" method="post">
+    <input type="text" name="username" placeholder="Username"><button type="submit">Add User</button>
+</form>
+
+<% if (user_not_found) { %>
+    <p style="color: red;">User not found!</p>
+<% } %>
+
+<%- include("templates/footer") %>

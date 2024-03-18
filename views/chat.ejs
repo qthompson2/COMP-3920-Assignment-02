@@ -1,5 +1,7 @@
 <%- include("templates/header") %>
 
+<%- include("templates/navbar") %>
+
 <% for (var i = 0; i < messages.length; i++) { %>
     <form action="/emoji/<%= messages[i].m_id%>" method="get">
         <% if (messages[i].num_days_from_now == 0) { %>

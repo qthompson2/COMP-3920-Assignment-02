@@ -127,6 +127,34 @@ async function getChat(postData) {
     }
 }
 
+async function getChatUsers(postData) {
+    let getChatUsersSQL = `
+        select u.user_id "id", u.username "name"
+        from user u
+        left join room_user ru
+        on u.user_id = ru.user_id
+        left join room r
+        on ru.room_id = r.room_id
+        where r.room_id = :room_id;
+    `;
+
+    let room_id_params = {
+        room_id: postData.room_id
+    }
+
+    try {
+        const users = await database.query(getChatUsersSQL, room_id_params);
+
+        console.log("Successfully retrieved users for room " + postData.room_id);
+        console.log(users[0]);
+        return users[0];
+    } catch(err) {
+        console.log("Error getting users for room " + postData.room_id);
+        console.log(err);
+        return false;
+    }
+}
+
 async function sendMessage(postData) {
     let getRoomUserIDSQL = `
         select room_user_id
@@ -173,6 +201,93 @@ async function sendMessage(postData) {
 
     } catch (err) {
         console.log("Error getting room_user_id");
+        console.log(err);
+        return false;
+    }
+}
+
+async function getLastestMessageID(postData) {
+    let getLatestMessageIDSQL = `
+        select max(m.message_id) "max_msg"
+        from message m
+        left join room_user ru
+        on m.room_user_id = ru.room_user_id
+        left join room r
+        on ru.room_id = r.room_id
+        where r.room_id = :room_id;
+    `;
+
+    let room_id_params = {
+        room_id: postData.room_id
+    }
+
+    try {
+        const latestMessage = await database.query(getLatestMessageIDSQL, room_id_params);
+
+        console.log("Successfully retrieved latest message id");
+        console.log(latestMessage[0]);
+        return latestMessage[0];
+    }
+    catch(err) {
+        console.log("Error getting latest message id");
+        console.log(err);
+        return false;
+    }
+}
+
+async function updateLastRead(postData) {
+    let updateLastReadSQL = `
+        update room_user
+        set last_message_read_id = :last_message_read_id
+        where room_id = :room_id
+        and user_id = :user_id;
+    `;
+
+    let max_msg = await getLastestMessageID(postData);
+
+    let last_message_read_id_params = {
+        last_message_read_id: max_msg[0].max_msg,
+        room_id: postData.room_id,
+        user_id: postData.user_id
+    };
+
+    try {
+        const results = await database.query(updateLastReadSQL, last_message_read_id_params);
+
+        console.log("Successfully updated last read");
+        console.log(results[0]);
+        return true;
+    }
+    catch(err) {
+        console.log("Error updating last read");
+        console.log(err);
+        return false;
+    }
+}
+
+async function addUserToChat(postData) {
+    let addUserToChatSQL = `
+        insert into room_user (room_id, user_id, last_message_read_id)
+        values (:room_id, :user_id, :last_msg);
+    `;
+
+    let max_msg = await getLastestMessageID(postData);
+
+    let room_user_params = {
+        room_id: postData.room_id,
+        user_id: postData.user_id,
+        last_msg: max_msg[0].max_msg
+    }
+
+    try {
+        const results = await database.query(addUserToChatSQL, room_user_params);
+
+        console.log("Successfully added user to chat");
+        console.log(results[0]);
+        return true;
+    }
+    catch(err) {
+        console.log("Error adding user to chat");
         console.log(err);
         return false;
     }
@@ -292,4 +407,46 @@ async function toggleReaction(user_id, message_id, emoji_id) {
     }
 }
 
-module.exports = {getAllChats, getChat, sendMessage, getMessage, toggleReaction};
+async function createRoom(name, users) {
+    let createRoomSQL = `
+        insert into room (name, start_datetime)
+        values (:name, now());
+    `;
+
+    let getRoomIDSQL = `
+        select room_id
+        from room
+        where name = :name;
+    `;
+
+    let create_room_params = {
+        name: name
+    };
+
+    try {
+        await database.query(createRoomSQL, create_room_params);
+        const room_id = await database.query(getRoomIDSQL, create_room_params);
+
+        console.log("Successfully created room");
+
+        for (let i = 0; i < users.length; i++) {
+            let user = users[i];
+            let room_user_params = {
+                room_id: room_id[0][0].room_id,
+                user_id: user
+            };
+            await addUserToChat(room_user_params);
+
+            console.log("Successfully added user " + user + " to room " + room_id[0][0].room_id);
+        }
+
+        return true;
+
+    } catch(err) {
+        console.log("Error creating room");
+        console.log(err);
+        return false;
+    }
+}
+
+module.exports = {getAllChats, getChat, sendMessage, getMessage, toggleReaction, updateLastRead, getChatUsers, addUserToChat, createRoom};
