@@ -47,6 +47,7 @@ async function getAllChats(postData) {
     try {
         const chats = await database.query(getChatsSQL, user_id_params);
 
+        
         for (let i = 0; i < chats[0].length; i++) {
             let room = chats[0][i];
 
@@ -64,7 +65,12 @@ async function getAllChats(postData) {
 
             room.max_msg = latestMessage[0][0].max_msg;
             room.unread = unreadMessages[0][0].unread;
-            room.date = lastMessageDate[0][0].date;
+
+            if (lastMessageDate[0][0] != undefined) {
+                room.date = lastMessageDate[0][0].date;
+            } else {
+                room.date = "N/A";
+            }
         }
 
         console.log("Successfully retrieved chats");

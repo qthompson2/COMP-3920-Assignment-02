@@ -111,7 +111,7 @@ app.get('/chat', async (req, res) => {
     for (let i = 0; i < user_chats.length; i++) {
         let id = user_chats[i].id;
         
-        if (id === req.query.id) {
+        if (id == req.query.id) {
             valid_id = true;
             break;
         }
@@ -178,7 +178,7 @@ app.post('/emoji/:id', async (req, res) => {
 app.get('/chats', async (req, res) => {
     let data = await db_chats.getAllChats({user_id: app.locals.user.user_id});
 
-    res.render('chats', {chats: data});
+    res.render('chats', {chats: data, username: app.locals.user.username});
 });
 
 app.get('/add-user', async (req, res) => {
