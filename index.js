@@ -107,11 +107,27 @@ app.get('/', (req, res) => {
 });
 
 app.get('/chat', async (req, res) => { 
-    let data = await db_chats.getChat({room_id: req.query.id});
+    let user_chats = await db_chats.getAllChats({user_id: app.locals.user.user_id});
+    let valid_id = false;
 
-    await db_chats.updateLastRead({user_id: app.locals.user.user_id, room_id: req.query.id});
+    for (let i = 0; i < user_chats.length; i++) {
+        let id = user_chats[i].id;
+        
+        if (id === req.query.id) {
+            valid_id = true;
+            break;
+        }
+    }
 
-    res.render('chat', {messages: data, user_id: app.locals.user.user_id, room_id: req.query.id});
+    if (valid_id) {
+        let data = await db_chats.getChat({room_id: req.query.id});
+
+        await db_chats.updateLastRead({user_id: app.locals.user.user_id, room_id: req.query.id});
+
+        res.render('chat', {messages: data, user_id: app.locals.user.user_id, room_id: req.query.id});
+    } else {
+        res.redirect('/400');
+    }
 });
 
 app.post('/chat/:id', async (req, res) => {
@@ -310,7 +326,10 @@ app.post('/register', async (req, res) => {
     res.redirect('/login');
 });
 
-app.get('/hash-password/:password', async (req, res) => {
-    let hash = await bcrypt.hash(req.params.password, saltRounds);
-    res.send(hash);
+app.get('/400', async (req, res) => {
+    res.render('400');
+});
+
+app.get('*', async (req, res) => {
+    res.redirect('/404');
 });
