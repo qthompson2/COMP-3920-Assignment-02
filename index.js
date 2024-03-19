@@ -184,7 +184,9 @@ app.get('/chats', async (req, res) => {
 });
 
 app.get('/add-user', async (req, res) => {
-    res.render('addUser', {room_id: req.query.id, user_not_found: req.query.user_not_found});
+    let users = await db_chats.getChatUsers({room_id: req.query.id});
+
+    res.render('addUser', {room_id: req.query.id, user_not_found: req.query.user_not_found, users: users});
 });
 
 app.post('/add-user/:id', async (req, res) => {
