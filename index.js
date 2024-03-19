@@ -197,11 +197,9 @@ app.post('/add-user/:id', async (req, res) => {
     if (user) {
         await db_chats.addUserToChat({user_id: user.id, room_id: room_id});
         res.redirect('/chats');
-        return;
     } else {
         console.log("User not found");
-        res.redirect(`/add-user?room_id=${room_id}&user_not_found=true`);
-        return;
+        res.redirect(`/add-user?id=${room_id}&user_not_found=true`);
     }
 });
 
