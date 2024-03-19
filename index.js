@@ -8,8 +8,6 @@ const bcrypt = require('bcrypt');
 const db_users = require('./database/users.js')
 const db_utils = require('./database/db_utils.js') 
 const db_chats = require('./database/chats.js');
-const e = require("express");
-const { error } = require("dialog-node");
 
 const saltRounds = 12;
 
@@ -311,6 +309,11 @@ app.post('/register', async (req, res) => {
 
     if (errors.tooShort || errors.wrongCase || errors.noNumber || errors.noSpecial) {
         res.redirect(`/register?password-error=true&too-short=${errors.tooShort}&wrong-case=${errors.wrongCase}&no-number=${errors.noNumber}&no-special=${errors.noSpecial}`);
+        return;
+    }
+
+    if (postData.username === "" || postData.email === "") { 
+        res.redirect('/register?error=true');
         return;
     }
 
