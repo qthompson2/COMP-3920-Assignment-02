@@ -6,6 +6,7 @@
 
 <p>Name | Date Sent | Unread Messages</p>
 <% for (var i = 0; i < chats.length; i++) { %>
+    <% if (chats[i].id == null) {continue} %>
     <p><a href="/add-user?id=<%= chats[i].id%>">+</a> | <a href="/chat?id=<%= chats[i].id%>"><%= chats[i].name %></a> | <%= chats[i].date%> | <%= chats[i].unread%></p>
 <% } %>
 
